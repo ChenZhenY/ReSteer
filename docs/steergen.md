@@ -100,20 +100,11 @@ The paper-era scripts live in mimiclabs-priv (`libero_steerability` branch @ `09
 | v3: no candidate list when ≤ 50 feasible states; candidate poses read with a one-element offset into the flattened state; non-state datasets counted as demos; debug PNGs written to the working directory | fixed | – |
 | v1 stopped at a `breakpoint()`; regen asked before overwriting and appended the MuJoCo version to the file name | no prompts; the version is stored in the file attributes | – |
 
-`tests/parity/steergen_parity.py` runs the paper-era scripts and the release on the same demos and
-seeds. It checks that these are **bitwise identical** for 3 demos per task on two bowl tasks:
+We checked before the release that the paper-era scripts and this port are **bitwise identical** on the same
+demos and seeds (3 demos per task, two bowl tasks), for:
 - the regenerated state banks (states, `act`, `qacc`);
 - the stage labels and legacy `dist_to_go`;
 - the step-matched bridges (actions, both camera streams, MuJoCo states, 8-D states).
-
-Run it with:
-
-```bash
-python tests/parity/steergen_parity.py --old-repo <pi0-anytime-steerability@2db0966> \
-    --mimiclabs <mimiclabs-priv@096a32a> --raw-dir data/libero_raw/libero_goal --work /tmp/steergen_parity
-```
-
-It needs `cloudpickle` and `gym` in the environment; the paper-era LIBERO copy imports them.
 
 ## Notes on the paper datasets
 

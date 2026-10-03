@@ -48,7 +48,6 @@ class Args:
     """Paper-era behavior: skip SRBC episodes whose prompt switched at step 0."""
     max_episodes: int | None = None
     """Stop after this many LeRobot episodes (for testing)."""
-    push_to_hub: bool = False
 
 
 def _resize(images: np.ndarray) -> np.ndarray:
@@ -119,8 +118,6 @@ def main(args: Args) -> None:
     print(f"Wrote {num_episodes} episodes / {num_frames} frames to {root}")
     for task, count in sorted(tasks.items()):
         print(f"  {count:5d}  {task}")
-    if args.push_to_hub:
-        dataset.push_to_hub(tags=["libero", "panda", "resteer"], private=False, license="apache-2.0")
 
 
 if __name__ == "__main__":

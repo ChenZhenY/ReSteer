@@ -7,6 +7,18 @@ source "$(dirname "$0")/common.sh"
 cd "$REPO"
 
 command -v uv >/dev/null || { echo "Install uv first: https://docs.astral.sh/uv/" >&2; exit 1; }
+if [[ $(uname) == Linux ]]; then
+  # A C compiler builds openpi's evdev dependency; OpenCV needs libGL and GLib; MuJoCo renders through libEGL.
+  missing=()
+  command -v cc >/dev/null || missing+=(build-essential)
+  for pair in libGL.so.1:libgl1 libEGL.so.1:libegl1 libglib-2.0.so.0:libglib2.0-0; do
+    ldconfig -p | grep -q "${pair%%:*}" || missing+=("${pair##*:}")
+  done
+  if ((${#missing[@]})); then
+    echo "Missing system packages. On Ubuntu/Debian: sudo apt-get install -y ${missing[*]}" >&2
+    exit 1
+  fi
+fi
 git submodule update --init third_party/openpi
 log "simulation environment"
 uv sync

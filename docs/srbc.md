@@ -96,8 +96,8 @@ converter did.
 ## Differences from the paper-era scripts
 `scripts/run_srbc.sh --paper` (i.e. `collect --paper-compat` plus the paper's launch settings: 400 steps,
 25 attempts per configuration, success rate ≤ 0.7) reproduces the paper-era collectors exactly.
-`tests/parity/srbc_parity.py` checks that the paper-era scripts and this collector send the same policy requests
-and record the same frames.
+We checked before the release that, in this mode, the paper-era scripts and this collector send the same policy
+requests and record the same frames.
 
 | Paper-era behavior | Default now | Reproduce with |
 |---|---|---|

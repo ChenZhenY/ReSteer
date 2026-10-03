@@ -109,10 +109,11 @@ Per-switch-step curves, per-task tables, data statistics and timings are in
 
 Requirements:
 - Linux with an NVIDIA GPU. Policy serving needs about 10 GB of GPU memory, and MuJoCo renders with EGL.
+- A C compiler, libGL, libEGL and GLib. On Ubuntu: `sudo apt-get install -y build-essential libgl1 libegl1 libglib2.0-0`.
 - [uv](https://docs.astral.sh/uv/).
-- `git clone --recurse-submodules` (or `git submodule update --init third_party/openpi`).
 
 ```bash
+git clone --recurse-submodules https://github.com/ChenZhenY/ReSteer.git && cd ReSteer
 scripts/setup_env.sh      # both uv environments + a rendering check
 ```
 
@@ -237,6 +238,12 @@ scripts/policy.sh train pi05_libero_resteer_srbc --exp-name srbc \
     --weight-loader.params-path checkpoints/pi05_libero_resteer_steergen/steergen/1999/params
 ```
 
+- **Local runs.** Everything runs on your machine.
+  - LIBERO's LeRobot data and the π0.5 base weights download on first use; neither needs an account.
+  - Generated datasets are written locally by `convert_to_lerobot`.
+  - Weights & Biases logging is off unless you pass `--wandb-enabled`.
+
+  See [docs/training.md](docs/training.md#fine-tuning-on-your-machine).
 - **Serving.** Checkpoints are served with the stock `pi05_libero` config
   (`scripts/serve_policy.sh --checkpoint <step dir>`).
 - **Release.** `scripts/policy.sh export_checkpoint` strips the optimizer state.
@@ -260,7 +267,7 @@ scripts/            end-to-end launchers (bash)
 third_party/libero  modified LIBERO (see RESTEER_CHANGES.md)
 third_party/openpi  upstream openpi (git submodule, unmodified)
 docs/               protocol, CMI, SteerGen, SRBC, training, file formats, provenance, replication
-tests/              unit tests (uv run pytest) and parity scripts against the paper-era code
+tests/              unit tests (uv run pytest) and a GPU-free check of the launchers
 ```
 
 ## Citation

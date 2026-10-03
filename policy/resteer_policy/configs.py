@@ -12,6 +12,9 @@ checkpoints are served with the stock config: ``serve_policy.py policy:checkpoin
 
 Dataset repo ids are LeRobot ids, resolved under ``$HF_LEROBOT_HOME`` or on the Hugging Face hub.
 Override them on the command line (``--data.repo-ids a b c``) to train on your own generated data.
+
+Weights & Biases logging is off by default, so training runs locally without an account; enable it with
+``--wandb-enabled``.
 """
 
 import dataclasses
@@ -44,6 +47,7 @@ def _resteer_config(name: str, repo_ids, weights, init_params: str, **overrides)
             extra_delta_transform=False,
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader(init_params),
+        wandb_enabled=False,
         **overrides,
     )
 

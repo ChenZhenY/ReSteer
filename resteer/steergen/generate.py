@@ -87,7 +87,7 @@ class Args:
     """Start steps (bank indices). Default: 0-49 (step_matched), 0, 5, ..., 95 (stage_matched)."""
     seed: int = 0
     source_demo: int | None = None
-    """Use this demo of the source task instead of a random one (debugging / parity tests)."""
+    """Use this demo of the source task instead of a random one (for debugging)."""
     target_demo: int | None = None
     """Use this demo of the target task instead of a random one (step_matched only)."""
     max_xyz_delta: float = 0.005

@@ -23,25 +23,44 @@ Training uses the unmodified openpi submodule (`third_party/openpi`, pinned) and
     run. This matches the paper's runs.
 - **Checkpoint export** (`export_checkpoint.py`): see below.
 
-## Running
+## Fine-tuning on your machine
 
-```bash
-# Local LeRobot datasets live under $HF_LEROBOT_HOME/<repo_id> (default ~/.cache/huggingface/lerobot).
-scripts/policy.sh convert_to_lerobot --help
+Training runs locally with openpi; nothing is uploaded.
 
-scripts/policy.sh train pi05_libero_resteer_steergen --exp-name steergen \
-    --data.repo-ids physical-intelligence/libero <you>/libero_goal_steergen --fsdp-devices 2 --batch-size 64
-scripts/policy.sh train pi05_libero_resteer_srbc --exp-name srbc \
-    --data.repo-ids physical-intelligence/libero <you>/libero_goal_steergen <you>/libero_goal_srbc \
-    --weight-loader.params-path checkpoints/pi05_libero_resteer_steergen/steergen/1999/params \
-    --fsdp-devices 2 --batch-size 64
-```
+1. **Datasets.** Training reads LeRobot datasets from `$HF_LEROBOT_HOME` (default `~/.cache/huggingface/lerobot`).
+   - `physical-intelligence/libero` (the LIBERO demonstrations, about 33 GB) is downloaded from the Hugging Face
+     Hub on first use. No account is needed.
+   - Convert your generated episodes under the configs' default repo ids, so training finds them without extra
+     flags:
 
-- All openpi training flags apply. Useful ones: `--num-train-steps`, `--save-interval`, `--no-wandb-enabled`,
-  `--overwrite`, `--resume`.
-- Checkpoints go to `checkpoints/<config>/<exp-name>/<step>`. The last step is `num_train_steps − 1`.
+     ```bash
+     scripts/policy.sh convert_to_lerobot data/steergen/bridges --repo-id resteer/libero_goal_steergen
+     scripts/policy.sh convert_to_lerobot data/srbc/srbc.hdf5 --repo-id resteer/libero_goal_srbc
+     ```
+
+2. **Base weights.** `pi05_libero`'s parameters and normalization statistics download once from openpi's public
+   bucket into `$OPENPI_DATA_HOME` (default `~/.cache/openpi`). To start from a local copy, pass
+   `--weight-loader.params-path /path/to/params`.
+3. **Train.** Both commands below use the default datasets:
+
+   ```bash
+   scripts/policy.sh train pi05_libero_resteer_steergen --exp-name steergen --fsdp-devices 2 --batch-size 64
+   scripts/policy.sh train pi05_libero_resteer_srbc --exp-name srbc \
+       --weight-loader.params-path checkpoints/pi05_libero_resteer_steergen/steergen/1999/params \
+       --fsdp-devices 2 --batch-size 64
+   ```
+
+   - Use `--data.repo-ids` (with matching `--data.dataset-weights`) to train on other datasets.
+   - All openpi training flags apply. Useful ones: `--num-train-steps`, `--save-interval`, `--overwrite`,
+     `--resume`.
+   - Weights & Biases logging is off; `--wandb-enabled` turns it on.
+4. **Outputs.** Checkpoints go to `checkpoints/<config>/<exp-name>/<step>`. The last step is `num_train_steps − 1`.
+   - A checkpoint with optimizer state takes about 42 GB; `export_checkpoint` keeps the 12 GB needed to serve it.
+
+**Hardware.** π0.5 is fully fine-tuned with FSDP, sharded over `--fsdp-devices` GPUs.
 - The paper's runs used `--fsdp-devices 2 --batch-size 64` on 2×H100, or `--fsdp-devices 8 --batch-size 128` on
   8×A40.
+- The replication in [replication.md](replication.md) used 4×H100 (batch 64) and 8×H100 (batch 128).
 
 ## Serving and exporting checkpoints
 

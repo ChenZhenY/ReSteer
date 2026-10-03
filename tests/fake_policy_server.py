@@ -1,4 +1,4 @@
-"""Deterministic stand-in for an openpi policy server (tests and old-vs-new parity checks).
+"""Deterministic stand-in for an openpi policy server (unit tests and the launcher check).
 
 Actions are a pure function of a digest of the request (images, state, prompt), so two clients
 that behave identically send identical request sequences and get identical rollouts. Every
