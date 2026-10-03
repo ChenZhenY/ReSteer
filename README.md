@@ -247,8 +247,9 @@ scripts/policy.sh train pi05_libero_resteer_srbc --exp-name srbc \
 - **Serving.** Checkpoints are served with the stock `pi05_libero` config
   (`scripts/serve_policy.sh --checkpoint <step dir>`).
 - **Release.** `scripts/policy.sh export_checkpoint` strips the optimizer state.
-- **Hardware.** π0.5 is fully fine-tuned with FSDP. The paper's runs used 2×H100 (`--fsdp-devices 2 --batch-size 64`)
-  or 8×A40 (`--fsdp-devices 8 --batch-size 128`).
+- **Hardware.** π0.5 is fully fine-tuned with FSDP; parameters, optimizer state and EMA take about 80 GB across the
+  GPUs. The paper used 2×H100 (`--fsdp-devices 2 --batch-size 64`) or 8×A40 (`--fsdp-devices 8 --batch-size 128`).
+  Two 48 GB GPUs are not enough.
 
 ## Released artifacts
 

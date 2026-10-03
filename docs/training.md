@@ -57,10 +57,14 @@ Training runs locally with openpi; nothing is uploaded.
 4. **Outputs.** Checkpoints go to `checkpoints/<config>/<exp-name>/<step>`. The last step is `num_train_steps − 1`.
    - A checkpoint with optimizer state takes about 42 GB; `export_checkpoint` keeps the 12 GB needed to serve it.
 
-**Hardware.** π0.5 is fully fine-tuned with FSDP, sharded over `--fsdp-devices` GPUs.
-- The paper's runs used `--fsdp-devices 2 --batch-size 64` on 2×H100, or `--fsdp-devices 8 --batch-size 128` on
-  8×A40.
-- The replication in [replication.md](replication.md) used 4×H100 (batch 64) and 8×H100 (batch 128).
+**Hardware.** π0.5 is fully fine-tuned with FSDP, sharded over `--fsdp-devices` GPUs. Parameters, optimizer state
+and EMA weights take about 80 GB, so each GPU holds roughly 80 GB / N plus activations.
+- **Known to work:**
+  - 2×H100 80 GB (`--fsdp-devices 2 --batch-size 64`) and 8×A40 48 GB (`--fsdp-devices 8 --batch-size 128`): the
+    paper's runs.
+  - 4×H100 (batch 64) and 8×H100 (batch 128): the replication in [replication.md](replication.md).
+- **Does not fit:** 2×48 GB GPUs (we tried 2×L40), even with `--ema-decay None` and batch 2. Use more GPUs, or
+  larger ones.
 
 ## Serving and exporting checkpoints
 
