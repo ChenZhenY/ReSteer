@@ -41,37 +41,6 @@ def test_from_eval_results_filters_and_orders(tmp_path):
     assert [c.source for c in select.from_eval_results(tmp_path, source_tasks=(1,))] == [tasks.TASKS[1].name]
 
 
-def test_paper_era_tuples_directory(tmp_path):
-    source = tasks.get_task(6)
-    paper_era = {
-        "task_name": source.name,
-        "task_description": source.title,
-        "parameters": {"percentage": 10},
-        "low_mutual_info_tuples": [
-            {"old_prompt": source.title, "new_prompt": tasks.TASKS[0].title, "new_prompt_step": 25,
-             "mutual_info": 0.01, "demo_name": "demo_3_states"},
-            {"old_prompt": source.title, "new_prompt": source.title, "new_prompt_step": 10,
-             "mutual_info": 0.02, "demo_name": "demo_1_states"},
-        ],
-    }  # fmt: skip
-    _write_json(tmp_path / "task_6" / "step_threshold_100" / "x_low_mi_tuples.json", paper_era)
-    _write_json(tmp_path / "task_6" / "step_threshold_50" / "x_low_mi_tuples.json", paper_era)  # ignored
-
-    configs = select.from_low_cmi_tuples(tmp_path)
-    # Paper-era files predate `policy_step`: the switch step is the bank index minus the 10 warm-up states.
-    assert [(c.source, c.target, c.switch_step, c.state_index) for c in configs] == [
-        (source.name, tasks.TASKS[0].name, 15, 25),
-        (source.name, source.name, 0, 10),
-    ]
-    assert configs[0].demo_name == "demo_3_states" and configs[0].mutual_info == 0.01
-
-    no_same = select.from_low_cmi_tuples(tmp_path, include_same_task=False)
-    assert [(c.source, c.target) for c in no_same] == [(source.name, tasks.TASKS[0].name)]
-
-    paper = select.select("cmi", tmp_path, paper_compat=True)
-    assert [c.switch_step for c in paper] == [25, 10]
-
-
 def test_compute_cmi_output_directory(tmp_path):
     tuple_ = {"source_task": "put_the_bowl_on_the_plate", "target_task": "turn_on_the_stove",
               "old_prompt": "Put The Bowl On The Plate", "new_prompt": "Turn On The Stove",

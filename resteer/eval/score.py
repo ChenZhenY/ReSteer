@@ -6,13 +6,10 @@ target != source (paper definition: 10 x 9 task pairs x 20 switch steps). The me
 including target == source, which the paper-era aggregation scripts reported, is printed as well.
 
     python -m resteer.eval.score results/pi05_libero
-    python -m resteer.eval.score old_results_dir --legacy     # paper-era task_*/single_state_*/ layout
 """
 
-import collections
 import dataclasses
 import pathlib
-from typing import Literal
 
 import numpy as np
 import tyro
@@ -31,34 +28,6 @@ def load_cells(results_dir: pathlib.Path) -> Cells:
         for r in data["rollouts"]:
             cells.setdefault((source, k, r["target"]), []).append(bool(r["success"]))
     return cells
-
-
-def load_legacy_cells(results_dir: pathlib.Path, dedupe: Literal["max_sr", "all"] = "max_sr") -> Cells:
-    """Reads paper-era ``task_*/single_state_*/<task>_<demo>_step<k>.json`` files.
-
-    A (task, k) could be evaluated more than once (relaunched jobs). ``max_sr`` keeps the file with
-    the highest mean success rate, as the paper-era combiner did; ``all`` pools every file.
-    """
-    per_step: dict[tuple[str, int], list[Cells]] = collections.defaultdict(list)
-    for path in sorted(results_dir.glob("task_*/single_state_*/*.json")):
-        data = utils.read_json(path)
-        source = _tasks.get_task(data["metadata"]["task_name"]).name
-        k = int(data["state_experiment_result"]["step_idx"])
-        cells: Cells = {}
-        for block in data["state_experiment_result"]["prompt_results"].values():
-            target = _tasks.get_task(block["prompt"]).name
-            cells.setdefault((source, k, target), []).extend(bool(e["success"]) for e in block["experiments"])
-        per_step[(source, k)].append(cells)
-    merged: Cells = {}
-    for candidates in per_step.values():
-        if dedupe == "max_sr":
-            best = max(candidates, key=lambda c: np.mean([s for v in c.values() for s in v]))
-            merged.update(best)
-        else:
-            for c in candidates:
-                for key, values in c.items():
-                    merged.setdefault(key, []).extend(values)
-    return merged
 
 
 def summarize(cells: Cells) -> dict:
@@ -119,15 +88,12 @@ def plot(summary: dict, out_path: pathlib.Path) -> None:
 @dataclasses.dataclass
 class Args:
     results_dir: tyro.conf.Positional[pathlib.Path]
-    legacy: bool = False
-    """Read a paper-era result directory (task_*/single_state_*/*.json)."""
-    legacy_dedupe: Literal["max_sr", "all"] = "max_sr"
     plot: bool = False
     """Also write summary.png (needs the `viz` extra)."""
 
 
 def main(args: Args) -> None:
-    cells = load_legacy_cells(args.results_dir, args.legacy_dedupe) if args.legacy else load_cells(args.results_dir)
+    cells = load_cells(args.results_dir)
     if not cells:
         raise SystemExit(f"No results found under {args.results_dir}")
     summary = summarize(cells)

@@ -43,11 +43,10 @@ A configuration is (source task, target task, switch step). There are two source
 - **`cmi`**: the low-CMI tuples of `resteer.cmi.compute_cmi`, i.e. the switch points where the instruction
   barely changes what the policy does.
   - Pass the output directory (its combined `low_cmi_tuples.json` is read) or a tuples file.
-  - Paper-era result directories (`task_<N>/step_threshold_100/*_low_mi_tuples.json`) are also accepted.
   - A tuple indexes a state of a rollout state bank. The switch step is its `policy_step`: the bank index minus
     the 10 warm-up states, i.e. the step at which the CMI was measured.
   - Tuples whose target equals the source are kept unless `--no-include-same-task` is passed. compute_cmi
-    already drops them by default; paper-era files contain them.
+    only writes them when run with `--include-same-task` or `--paper-compat`.
 
 ### 2. Collection (`collect`)
 - **Rollouts.** Each rollout is an evaluation rollout (`resteer.eval.rollout`): a fresh random scene, 10

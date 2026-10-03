@@ -72,25 +72,6 @@ def test_score_excludes_same_task(tmp_path):
     assert summary["score_by_switch_step"][5] == pytest.approx(0.0)
 
 
-def test_score_legacy_reader(tmp_path):
-    def legacy(path, source, k, prompt_outcomes):
-        blocks = {
-            f"prompt_{i}": {"prompt": p, "experiments": [{"success": s} for s in ss]}
-            for i, (p, ss) in enumerate(prompt_outcomes.items())
-        }
-        utils.write_json(path, {"metadata": {"task_name": source}, "state_experiment_result": {
-            "step_idx": k, "prompt_results": blocks}})  # fmt: skip
-
-    d = tmp_path / "task_0" / "single_state_libero_goal"
-    name = tasks.TASKS[0].name
-    legacy(d / "a.json", name, 0, {"Put The Bowl On The Plate": [0, 0]})
-    legacy(d / "b.json", name, 0, {"Put The Bowl On The Plate": [1, 0]})  # relaunched duplicate
-    cells = score.load_legacy_cells(tmp_path, dedupe="max_sr")
-    assert cells[(name, 0, "put_the_bowl_on_the_plate")] == [True, False]
-    cells = score.load_legacy_cells(tmp_path, dedupe="all")
-    assert len(cells[(name, 0, "put_the_bowl_on_the_plate")]) == 4
-
-
 def test_compute_cmi(tmp_path):
     source = tasks.TASKS[2]
     for index, h_s in [(10, 2.0), (15, 1.0)]:

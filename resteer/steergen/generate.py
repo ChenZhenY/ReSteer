@@ -86,10 +86,6 @@ class Args:
     steps: tuple[int, ...] | None = None
     """Start steps (bank indices). Default: 0-49 (step_matched), 0, 5, ..., 95 (stage_matched)."""
     seed: int = 0
-    source_demo: int | None = None
-    """Use this demo of the source task instead of a random one (for debugging)."""
-    target_demo: int | None = None
-    """Use this demo of the target task instead of a random one (step_matched only)."""
     max_xyz_delta: float = 0.005
     max_rot_delta: float = 0.05
     success_threshold: float | None = None
@@ -227,8 +223,8 @@ def main(args: Args) -> None:
     sources = [task_name(t) for t in args.source_tasks] or [t.name for t in _tasks.TASKS]
     targets = [task_name(t) for t in args.target_tasks] or [t.name for t in _tasks.TASKS]
 
-    def pick(task: str, forced: int | None) -> str:
-        return f"demo_{forced}_states" if forced is not None else rng.choice(bank.demo_keys(task))
+    def pick(task: str) -> str:
+        return rng.choice(bank.demo_keys(task))
 
     kept = failed = 0
     start_time = time.time()
@@ -240,14 +236,14 @@ def main(args: Args) -> None:
                 if stage_mode:
                     source_demos, target_demos = load_labelled_demos(bank, source), load_labelled_demos(bank, target)
                 else:  # demos are drawn before the env is built, as in the paper-era script
-                    choices = [(t, pick(source, args.source_demo), pick(target, args.target_demo)) for t in steps]
+                    choices = [(t, pick(source), pick(target)) for t in steps]
                 env = SteerGenEnv("replay_delta" if stage_mode else "interpolation_delta", args.camera_size)
                 for i, t in enumerate(steps):
                     meta = {"mode": args.mode, "source_task": source, "target_task": target, "step": t,
                             "seed": args.seed, "action_units": "libero", "prompt_style": args.prompt_style,
                             "success_threshold": threshold, "states_file": str(args.states)}  # fmt: skip
                     if stage_mode:
-                        source_key = pick(source, args.source_demo)
+                        source_key = pick(source)
                         source_states, source_stages, _ = source_demos[source_key]
                         if t >= len(source_states) or source_stages[t] != label_stages.TRANSPORT:
                             continue

@@ -8,8 +8,8 @@ A *switch config* is (source task, target task, switch step). Two sources, as in
 - ``cmi``: the low-CMI tuples written by ``resteer.cmi.compute_cmi``: states where the instruction
   barely changes the policy's actions. Tuples index states of a rollout state bank; ``policy_step``
   is the number of policy steps taken before that state (bank index minus the warm-up states).
-  Tuples whose target equals the source (present in paper-era files) are kept unless
-  ``include_same_task=False``.
+  Tuples whose target equals the source (written by ``compute_cmi --include-same-task`` or
+  ``--paper-compat``) are kept unless ``include_same_task=False``.
 
     python -m resteer.srbc.select --source success_rate --results results/steergen_policy
     python -m resteer.srbc.select --source cmi --results results/cmi/steergen_policy
@@ -63,53 +63,44 @@ def from_eval_results(
     return configs
 
 
-def _tuple_files(path: pathlib.Path) -> list[pathlib.Path]:
-    """A tuples file, the combined file of a compute_cmi output directory, or a paper-era directory."""
+def _tuple_file(path: pathlib.Path) -> pathlib.Path:
+    """A tuples file, or the combined file of a compute_cmi output directory."""
     if path.is_file():
-        return [path]
+        return path
     if (path / "low_cmi_tuples.json").is_file():
-        return [path / "low_cmi_tuples.json"]
-    files = sorted(path.glob("task_*/step_threshold_100/*_low_mi_tuples.json"))
-    if not files:
-        raise FileNotFoundError(f"No low_cmi_tuples.json (or paper-era task_*/step_threshold_100/*) under {path}")
-    return files
+        return path / "low_cmi_tuples.json"
+    raise FileNotFoundError(f"No low_cmi_tuples.json under {path}")
 
 
 def from_low_cmi_tuples(
     path: pathlib.Path,
     include_same_task: bool = True,
     source_tasks: tuple[int, ...] | None = None,
-    state_offset: int = 10,
     switch_at_state_index: bool = False,
 ) -> list[SwitchConfig]:
-    """Reads a tuples JSON, a ``compute_cmi`` output directory, or a paper-era results directory
-    (``task_<N>/step_threshold_100/*_low_mi_tuples.json``).
+    """Reads a tuples JSON or a ``compute_cmi`` output directory.
 
     ``switch_at_state_index`` switches at the raw state-bank index instead of the policy step,
-    as the paper-era collector did. ``state_offset`` converts indices of files that predate the
-    ``policy_step`` field.
+    as the paper-era collector did.
     """
     configs = []
-    for file in _tuple_files(path):
-        for t in utils.read_json(file)["low_mutual_info_tuples"]:
-            source = _tasks.get_task(t.get("source_task") or t["old_prompt"])
-            target = _tasks.get_task(t.get("target_task") or t["new_prompt"])
-            if source_tasks is not None and source.id not in source_tasks:
-                continue
-            if not include_same_task and source == target:
-                continue
-            index = int(t["new_prompt_step"])
-            policy_step = int(t.get("policy_step", index - state_offset))
-            configs.append(
-                SwitchConfig(
-                    source.name,
-                    target.name,
-                    index if switch_at_state_index else policy_step,
-                    mutual_info=float(t["mutual_info"]),
-                    state_index=index,
-                    demo_name=t.get("demo_name"),
-                )
+    for t in utils.read_json(_tuple_file(path))["low_mutual_info_tuples"]:
+        source, target = _tasks.get_task(t["source_task"]), _tasks.get_task(t["target_task"])
+        if source_tasks is not None and source.id not in source_tasks:
+            continue
+        if not include_same_task and source == target:
+            continue
+        index = int(t["new_prompt_step"])
+        configs.append(
+            SwitchConfig(
+                source.name,
+                target.name,
+                index if switch_at_state_index else int(t["policy_step"]),
+                mutual_info=float(t["mutual_info"]),
+                state_index=index,
+                demo_name=t.get("demo_name"),
             )
+        )
     return configs
 
 
@@ -138,8 +129,8 @@ class Args:
     min_success_rate: float = 0.2
     max_success_rate: float = 0.9
     include_same_task: bool = True
-    """cmi source: keep tuples whose target is the source task (paper-era tuple files contain them;
-    compute_cmi excludes them unless run with --include-same-task or --paper-compat)."""
+    """cmi source: keep tuples whose target is the source task (compute_cmi only writes them when run with
+    --include-same-task or --paper-compat)."""
     tasks: tuple[int, ...] | None = None
     """Only these source task ids."""
     paper_compat: bool = False
