@@ -1,0 +1,7 @@
+# Stand-in for the openpi checkout (OPENPI_DIR) so the launchers can be tested without a GPU:
+# its scripts/serve_policy.py starts tests/fake_policy_server.py. See tests/launcher_check.sh.
+[project]
+name = "fake-openpi"
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = []

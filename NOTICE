@@ -1,0 +1,16 @@
+ReSteer
+Copyright 2026 The ReSteer authors.
+
+This repository contains code derived from the following projects:
+
+- openpi (https://github.com/Physical-Intelligence/openpi), Apache License 2.0.
+  resteer/client/{msgpack_numpy.py,image_tools.py,policy_client.py} are adapted from
+  packages/openpi-client at commit 215abfb. openpi itself is used unmodified as a git
+  submodule (third_party/openpi) by the policy/ project.
+
+- LIBERO (https://github.com/Lifelong-Robot-Learning/LIBERO), MIT License.
+  third_party/libero is a modified copy; see third_party/libero/RESTEER_CHANGES.md.
+
+- MimicLabs data-collection tooling (Georgia Tech RL2). The SteerGen generator in
+  resteer/steergen/ is a re-implementation of the interpolation data collection developed
+  for this project on top of MimicLabs.

@@ -1,0 +1,2 @@
+# Runtime dependencies of this LIBERO copy are declared in the ReSteer root pyproject.toml
+# (robosuite==1.4.1, mujoco==3.2.3, bddl==1.0.1, easydict, pyyaml, numpy).

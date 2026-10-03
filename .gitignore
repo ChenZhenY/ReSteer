@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Data, results and checkpoints produced by the pipeline
+/data/
+/results/
+/checkpoints/
+/assets/
+*.hdf5
+*.h5
+*.mp4
+wandb/
+logs/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
