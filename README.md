@@ -137,7 +137,9 @@ The script:
 2. runs one evaluation worker per source task;
 3. aggregates the results with `python -m resteer.eval.score`.
 
-`results/<name>/summary.json` holds the score, the per-task scores and the full success matrices. Re-running the same command resumes an interrupted evaluation, with results identical to an uninterrupted run.
+`results/<name>/summary.json` holds the score, the per-task scores and the full success matrices. To watch the
+rollouts, add `-- --save-video`. Each rollout is then saved as an MP4 of the agent-view camera, showing the step and
+the current instruction, under `results/<name>/task_*/videos/step_<k>/<target>_r<repeat>_<success|failure>.mp4`. Re-running the same command resumes an interrupted evaluation, with results identical to an uninterrupted run.
 
 **Protocol** (details and the rationale for each constant: [docs/protocol.md](docs/protocol.md)):
 1. Each rollout starts from a random scene and warms up for 10 zero-action steps.
