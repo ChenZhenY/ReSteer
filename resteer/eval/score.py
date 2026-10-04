@@ -62,34 +62,9 @@ def summarize(cells: Cells) -> dict:
     }
 
 
-def plot(summary: dict, out_path: pathlib.Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    per_task = summary["per_task"]
-    fig, axes = plt.subplots(2, 5, figsize=(26, 10), squeeze=False)
-    for ax, (source, info) in zip(axes.flat, per_task.items()):
-        targets = list(info["success_rate"])
-        steps = list(next(iter(info["success_rate"].values())))
-        matrix = np.array([[np.nan if info["success_rate"][t][k] is None else info["success_rate"][t][k] for k in steps]
-                           for t in targets])  # fmt: skip
-        ax.imshow(matrix, vmin=0, vmax=1, cmap="viridis", aspect="auto")
-        ax.set_title(f"{source}\nscore {info['score']:.3f}", fontsize=9)
-        ax.set_xticks(range(len(steps)), steps, fontsize=6)
-        ax.set_yticks(range(len(targets)), [t[:28] for t in targets], fontsize=6)
-        ax.set_xlabel("switch step")
-    fig.suptitle(f"steerability score {summary['steerability_score']:.3f}")
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
-
-
 @dataclasses.dataclass
 class Args:
     results_dir: tyro.conf.Positional[pathlib.Path]
-    plot: bool = False
-    """Also write summary.png (needs the `viz` extra)."""
 
 
 def main(args: Args) -> None:
@@ -108,8 +83,6 @@ def main(args: Args) -> None:
         f"\ncells: {summary['num_cells']}  rollouts: {summary['num_rollouts']}"
         f"\nwrote {args.results_dir / 'summary.json'}"
     )
-    if args.plot:
-        plot(summary, args.results_dir / "summary.png")
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ Mapping from the research scripts:
 | `examples/libero_steerability/main_steerability.py --test_full_rollout` | `resteer/eval/steerability.py`, `resteer/eval/rollout.py` |
 | `utils/{combine_*,simplify_experiment_results,aggregate_all_tasks_summary}.py` | `resteer/eval/score.py` |
 | `examples/libero_steerability/main_steerability_entropy.py`, `entropy_utils.py` | `resteer/cmi/sample_actions.py`, `resteer/cmi/kde.py` |
-| `visualization/viz_mutual_information.py` | `resteer/cmi/compute_cmi.py` |
+| `visualization/viz_mutual_information.py` (the CMI computation; its plots are not included) | `resteer/cmi/compute_cmi.py` |
 | `examples/libero_steerability/collect_policy_rollouts.py`, `merge_rollout_hdf5.py` | `resteer/cmi/collect_states.py`, `resteer/states.py merge` |
 | `utils/hdf5_states_combiner.py` | `resteer/states.py build-from-raw` |
 | `examples/libero_steerability/filtered_bc_libero_full_rollout{,_mi}.py` | `resteer/srbc/{select,collect}.py` |

@@ -35,8 +35,7 @@ and every ReSteer number depends on them.
   ReSteer sets `LIBERO_CONFIG_PATH` to its own directory and passes BDDL files by absolute path, so an
   existing upstream `~/.libero/config.yaml` does not interfere.
 - `libero/__init__.py` was added so an (editable) install exposes the package; upstream relied on `PYTHONPATH`.
-- Heavy imports are lazy: `matplotlib` is only imported by the segmentation visualizer (`envs/env_wrapper.py`).
-  The gym-based vector env (`envs/venv.py`) was removed.
+- The gym-based vector env (`envs/venv.py`) was removed.
 
 ## Removed (not used by ReSteer)
 Only what ReSteer loads is kept: the environment code (`envs/`), the steerability BDDL and the assets of its scene.
@@ -48,6 +47,7 @@ release's tests and a full LIBERO run use exactly this set.
   `libero_steerability/libero_goal_steerability.bddl`. This includes the LIBERO-Spatial analogue
   `libero_spatial_steerability.bddl` and an unrelated project's out-of-distribution variants.
 - The helpers in `utils/` and `envs/textures.py`, which nothing imports.
+- The visualization environments `SegmentationRenderEnv` and `DemoRenderEnv` (`envs/env_wrapper.py`).
 - Assets of other scenes: 545 of 585 files. The kept 40 cover the kitchen table scene, its textures and the seven
   objects of LIBERO-Goal (bowl, plate, cream cheese, wine bottle, wine rack, stove, cabinet).
   - Object classes for other objects remain registered, but their assets are gone. Building another LIBERO scene

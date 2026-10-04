@@ -23,7 +23,6 @@ import sys
 import time
 from typing import Literal
 
-import imageio
 import numpy as np
 import tyro
 
@@ -57,9 +56,6 @@ class Args:
     """"task": seed once per source task and run its switch steps in order (the paper's protocol).
     "step": seed every (task, switch step) independently, so switch steps can be split across workers
     (statistically equivalent, different layouts)."""
-    save_video: bool = False
-    video_every: int = 2
-    """Record every n-th frame when saving videos."""
     log_level: str = "INFO"
 
 
@@ -91,21 +87,6 @@ def step_seed(seed: int, task_id: int, switch_step: int) -> int:
 
 def task_dir_name(task: _tasks.Task) -> str:
     return f"task_{task.id}_{task.name}"
-
-
-class _VideoRecorder:
-    def __init__(self, every: int):
-        self.every, self.frames = every, []
-
-    def __call__(self, step, obs, query, action, prompt):
-        if step % self.every == 0:
-            import cv2
-
-            agentview, _ = sim.camera_images(obs)
-            frame = agentview.copy()
-            cv2.putText(frame, f"step {step}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.putText(frame, prompt, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
-            self.frames.append(frame)
 
 
 def evaluate_task(args: Args, task: _tasks.Task, client: PolicyClient) -> None:
@@ -147,12 +128,10 @@ def evaluate_task(args: Args, task: _tasks.Task, client: PolicyClient) -> None:
                     index += 1
                     if index <= len(rollouts):  # done before an interruption (rollouts run in this order)
                         continue
-                    sim.reset(env, render_cameras=args.save_video)
-                    recorder = _VideoRecorder(args.video_every) if args.save_video else None
+                    sim.reset(env, render_cameras=False)
                     result = _rollout.run_switch_rollout(
-                        env, client, task, target, k,
-                        max_steps=args.max_steps, replan_steps=args.replan_steps, on_step=recorder,
-                    )  # fmt: skip
+                        env, client, task, target, k, max_steps=args.max_steps, replan_steps=args.replan_steps
+                    )
                     rollouts.append({"target": target.name, "repeat": rep, **dataclasses.asdict(result)})
                     rng_state = utils.encode_rng_state(np.random.get_state())
                     utils.write_json(
@@ -160,11 +139,6 @@ def evaluate_task(args: Args, task: _tasks.Task, client: PolicyClient) -> None:
                         {"rollouts": rollouts, "rng_state": rng_state, "config": dataclasses.asdict(args)},
                         indent=None,
                     )
-                    if recorder is not None:
-                        outcome = "success" if result.success else "failure"
-                        video = task_dir / "videos" / f"step_{k:03d}" / f"{target.name}_r{rep}_{outcome}.mp4"
-                        video.parent.mkdir(parents=True, exist_ok=True)
-                        imageio.mimwrite(video, recorder.frames, fps=30)
             rates = {t.name: float(np.mean([r["success"] for r in rollouts if r["target"] == t.name])) for t in targets}
             utils.write_json(
                 _step_path(task_dir, k),

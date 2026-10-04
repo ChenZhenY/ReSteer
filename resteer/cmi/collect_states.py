@@ -17,7 +17,6 @@ import dataclasses
 import logging
 import pathlib
 
-import imageio
 import numpy as np
 import tyro
 
@@ -42,14 +41,12 @@ class Args:
     seed: int = 7
     stop_on_success: bool = False
     """Stop a rollout once the task succeeds (the paper kept rolling out for max_steps)."""
-    save_video: bool = False
     log_level: str = "INFO"
 
 
-def rollout_states(env, client: PolicyClient, task: _tasks.Task, args: Args, frames: list | None = None) -> np.ndarray:
+def rollout_states(env, client: PolicyClient, task: _tasks.Task, args: Args) -> np.ndarray:
     env.reset()
-    render = frames is not None  # otherwise cameras are rendered only for policy queries
-    sim.set_camera_rendering(env, render)
+    sim.set_camera_rendering(env, False)  # cameras are rendered only for policy queries
     states = [env.get_sim_state()]
     for _ in range(sim.NUM_WARMUP_STEPS):
         env.step(np.zeros(sim.ACTION_DIM).tolist())
@@ -59,12 +56,10 @@ def rollout_states(env, client: PolicyClient, task: _tasks.Task, args: Args, fra
         if not plan:
             sim.set_camera_rendering(env, True)
             query = sim.policy_input(sim.get_observation(env), task.prompt)
-            sim.set_camera_rendering(env, render)
+            sim.set_camera_rendering(env, False)
             plan.extend(client.infer(query)["actions"][: args.replan_steps])
-        obs, success_dict = sim.step(env, plan.popleft())
+        _, success_dict = sim.step(env, plan.popleft())
         states.append(env.get_sim_state())
-        if frames is not None:
-            frames.append(sim.camera_images(obs)[0])
         if args.stop_on_success and _tasks.is_success(task, success_dict):
             break
     return np.asarray(states)
@@ -83,13 +78,8 @@ def main(args: Args) -> None:
         demos = []
         try:
             for i in range(args.num_rollouts):
-                frames = [] if args.save_video else None
-                demos.append(rollout_states(env, client, task, args, frames))
+                demos.append(rollout_states(env, client, task, args))
                 logger.info("%s rollout %d: %d states", task.name, i, len(demos[-1]))
-                if frames:
-                    video = args.out_dir / "videos" / f"{task.name}_{i}.mp4"
-                    video.parent.mkdir(parents=True, exist_ok=True)
-                    imageio.mimwrite(video, frames, fps=30)
         finally:
             env.close()
         tmp = out.with_suffix(".tmp")

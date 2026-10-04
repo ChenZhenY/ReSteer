@@ -40,8 +40,6 @@ class Args:
     """Allow target == source in the low-CMI tuples (a same-task 'switch' generates no switching data)."""
     paper_compat: bool = False
     """Reproduce the paper-era selection: raw bank index <= 100 and same-task tuples included."""
-    plot: bool = False
-    """Write cmi_heatmaps.png (needs the `viz` extra)."""
 
 
 def cmi(state_entropy: float, prompt_entropy: float, normalize: bool) -> float:
@@ -113,28 +111,6 @@ def summarize(records: dict[str, list[dict]]) -> dict:
     return {"cmi": float(np.mean([v["cmi"] for v in per_task.values()])), "per_task": per_task}
 
 
-def plot(records: dict[str, list[dict]], out_path: pathlib.Path, label: str) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    fig, axes = plt.subplots(2, 5, figsize=(26, 10), squeeze=False)
-    for ax, (name, rs) in zip(axes.flat, sorted(records.items(), key=lambda kv: _tasks.get_task(kv[0]).id)):
-        steps = sorted({r["policy_step"] for r in rs})
-        matrix = np.full((len(_tasks.TASKS), len(steps)), np.nan)
-        for r in rs:
-            matrix[_tasks.get_task(r["target_task"]).id, steps.index(r["policy_step"])] = r["cmi"]
-        ax.imshow(matrix, cmap="magma", aspect="auto")
-        ax.set_title(f"{name}\nmean {np.nanmean(matrix):.3f}", fontsize=9)
-        ax.set_xticks(range(len(steps)), steps, fontsize=6)
-        ax.set_yticks(range(len(_tasks.TASKS)), [t.name[:28] for t in _tasks.TASKS], fontsize=6)
-        ax.set_xlabel("policy step")
-    fig.suptitle(label)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
-
-
 def count_undefined(results_dir: pathlib.Path) -> int:
     """(state, instruction) cells whose entropies are NaN (identical action samples); their CMI counts as 0."""
     count = 0
@@ -179,8 +155,6 @@ def main(args: Args) -> None:
     for name, v in summary["per_task"].items():
         print(f"{name:<46}{v['cmi']:.4f}")
     print(f"\nmean {kind} over tasks: {summary['cmi']:.4f}\nlow-CMI tuples: {len(all_tuples)}")
-    if args.plot:
-        plot(records, args.results_dir / "cmi_heatmaps.png", f"{kind} (mean {summary['cmi']:.3f})")
 
 
 if __name__ == "__main__":
