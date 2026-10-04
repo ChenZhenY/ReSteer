@@ -46,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     --out) OUT=$2; shift 2 ;;
     --quick) TASKS="3 4"; REPEATS=1; STEPS="0 50"; shift ;;
     --) shift; EXTRA+=("$@"); break ;;
+    -h|--help) sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done

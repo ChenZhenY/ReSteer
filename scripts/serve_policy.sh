@@ -15,6 +15,7 @@ while [[ $# -gt 0 ]]; do
     --config) CONFIG=$2; shift 2 ;;
     --port) PORT=$2; shift 2 ;;
     --gpu) GPU=$2; shift 2 ;;
+    -h|--help) sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done

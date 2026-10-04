@@ -43,6 +43,7 @@ while [[ $# -gt 0 ]]; do
     --max-restarts) MAX_RESTARTS=$2; shift 2 ;;
     --out) OUT=$2; shift 2 ;;
     --) shift; EXTRA+=("$@"); break ;;
+    -h|--help) sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done

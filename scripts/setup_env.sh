@@ -11,9 +11,13 @@ if [[ $(uname) == Linux ]]; then
   # A C compiler builds openpi's evdev dependency; OpenCV needs libGL and GLib; MuJoCo renders through libEGL.
   missing=()
   command -v cc >/dev/null || missing+=(build-essential)
-  for pair in libGL.so.1:libgl1 libEGL.so.1:libegl1 libglib-2.0.so.0:libglib2.0-0; do
-    ldconfig -p | grep -q "${pair%%:*}" || missing+=("${pair##*:}")
-  done
+  # Read the whole library list first: `ldconfig -p | grep -q` can fail under pipefail when grep exits early.
+  if ldconfig_bin=$(command -v ldconfig || command -v /sbin/ldconfig); then
+    libs=$("$ldconfig_bin" -p 2>/dev/null || true)
+    for pair in libGL.so.1:libgl1 libEGL.so.1:libegl1 libglib-2.0.so.0:libglib2.0-0; do
+      grep -qF "${pair%%:*}" <<<"$libs" || missing+=("${pair##*:}")
+    done
+  fi
   if ((${#missing[@]})); then
     echo "Missing system packages. On Ubuntu/Debian: sudo apt-get install -y ${missing[*]}" >&2
     exit 1

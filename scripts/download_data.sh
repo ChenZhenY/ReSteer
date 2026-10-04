@@ -5,6 +5,7 @@
 #   scripts/download_data.sh [DATA_DIR]      # default: data/
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0; fi
 DATA=${1:-$REPO/data}
 
 uvx --from huggingface_hub hf download yifengzhu-hf/LIBERO-datasets --repo-type dataset \

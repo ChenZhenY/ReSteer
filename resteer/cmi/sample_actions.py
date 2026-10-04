@@ -83,6 +83,13 @@ def sample_task(args: Args, task: _tasks.Task, bank: _states.StateBank, client: 
     np.random.seed(args.seed)
     offset = bank.num_warmup_states if args.offset is None else args.offset
     samples = bank.sample_uniform(task.name, args.num_steps, args.stride, offset, rng=random)
+    if not samples:
+        raise SystemExit(
+            f"{task.name}: no rollout in {args.states} is long enough to sample. States are taken at bank indices "
+            f"{offset}, {offset + args.stride}, ...; an index is used only from rollouts with more than index + "
+            f"{offset} states (the paper's conservative check), so the first needs more than {2 * offset}. "
+            "Collect longer rollouts."
+        )
     paths = [task_dir / f"state_{index:03d}.json" for _, index, _ in samples]
     done = [p.exists() for p in paths]
     if all(done):

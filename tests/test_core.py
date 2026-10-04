@@ -91,6 +91,19 @@ def test_compute_cmi(tmp_path):
     assert paper[0]["target_task"] == tasks.TASKS[0].name  # min CMI (0) among all cells, stable order
 
 
+def test_sample_actions_explains_rollouts_too_short(tmp_path):
+    from resteer import states
+    from resteer.cmi import sample_actions
+
+    task = tasks.get_task(3)
+    bank_path = tmp_path / "bank.hdf5"
+    # reset + 10 warm-up states + 5 policy steps: too short for the first sampled index (10 needs > 20 states)
+    states.write_task_demos(bank_path, task.name, [np.zeros((16, 9))], num_warmup_states=10)
+    args = sample_actions.Args(states=bank_path, out=tmp_path / "out")
+    with pytest.raises(SystemExit, match="long enough"):
+        sample_actions.sample_task(args, task, states.StateBank(bank_path), client=None)
+
+
 def test_episode_roundtrip(tmp_path):
     builder = episodes.EpisodeBuilder()
     for t in range(4):

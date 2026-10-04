@@ -37,12 +37,24 @@ start_server() {
   log "$SERVER_IMPL policy server on GPU $gpu port $port (pid $!, log $logfile)"
 }
 
-# wait_for_server <port> [timeout_s] - waits until the server answers /healthz.
+# wait_for_server <port> [timeout_s] [pid] [log_file] - waits until the server answers /healthz. Fails at once if
+# the server process <pid> exits (showing the end of its log), and after timeout_s if it never becomes ready.
 wait_for_server() {
-  local port=$1 timeout=${2:-1800} start=$SECONDS
+  local port=$1 timeout=${2:-1800} pid=${3:-} logfile=${4:-} start=$SECONDS
   until curl -sf "http://127.0.0.1:$port/healthz" >/dev/null; do
-    if (( SECONDS - start > timeout )); then log "server on port $port not ready after ${timeout}s"; return 1; fi
-    sleep 5
+    if [[ -n $pid ]] && ! kill -0 "$pid" 2>/dev/null; then
+      log "policy server on port $port exited during startup"
+      if [[ -n $logfile ]]; then
+        log "last lines of $logfile:"
+        tail -n 20 "$logfile" >&2
+      fi
+      return 1
+    fi
+    if ((SECONDS - start > timeout)); then
+      log "policy server on port $port not ready after ${timeout}s${logfile:+ (log $logfile)}"
+      return 1
+    fi
+    sleep 2
   done
 }
 
@@ -102,11 +114,15 @@ start_servers() {
   local mem
   mem=$(awk -v k="$per_gpu" -v f="$SERVER_MEM_FRACTION" 'BEGIN { printf "%.2f", f / k }')
   PORTS=() PORT_GPUS=()
+  local pids=() logs=()
   for ((i = 0; i < n; i++)); do
     local port=$((first_port + i)) gpu=${gpu_list[$((i % ${#gpu_list[@]}))]}
     start_server "$gpu" "$port" "$checkpoint" "$config" "$mem" "$log_dir/server_$port.log"
     PORTS+=("$port") PORT_GPUS+=("$gpu")
+    pids+=("${SERVER_PIDS[$((${#SERVER_PIDS[@]} - 1))]}") logs+=("$log_dir/server_$port.log")
   done
-  for port in "${PORTS[@]}"; do wait_for_server "$port" || { stop_servers; return 1; }; done
+  for ((i = 0; i < n; i++)); do
+    wait_for_server "${PORTS[$i]}" 1800 "${pids[$i]}" "${logs[$i]}" || { stop_servers; return 1; }
+  done
   log "${#PORTS[@]} policy server(s) ready"
 }
